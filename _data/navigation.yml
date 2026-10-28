@@ -1,9 +1,9 @@
 main:
-  - title: "Home"
+  - title: "ホーム"
     url: /
-  - title: "Categories"
+  - title: "カテゴリ"
     url: /categories/
-  - title: "Tags"
+  - title: "タグ"
     url: /tags/
-  - title: "About"
+  - title: "自己紹介"
     url: /about/

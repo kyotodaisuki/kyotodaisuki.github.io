@@ -1,10 +1,10 @@
-# sennta Tech Blog — Minimal Mistakes (Jekyll remote theme) for GitHub Pages
-# GitHub Pages builds this site automatically from the main branch.
-# Local preview (optional) needs Ruby + Bundler: bundle install, then bundle exec jekyll serve
+# kurogiの技術ブログ — Minimal Mistakes（Jekyll remote theme）for GitHub Pages
+# GitHub Pagesがmainブランチから自動でサイトを作ります。
+# ローカルで確認する場合（任意）はRuby + Bundlerが必要です：bundle install、bundle exec jekyll serve
 
-title: sennta Tech Blog
+title: kurogiの技術ブログ
 description: >-
-  Java 保守、Linux、Python、ROS2 学习记录，目标是自动驾驶软件结合验证工程师。
+  Javaの保守、Linux、Python、ROS2の学習記録です。自動運転ソフトウェアの結合検証エンジニアを目指しています。
 url: https://kyotodaisuki.github.io
 baseurl: ""
 github_username: kyotodaisuki
@@ -30,8 +30,8 @@ plugins:
   - jekyll-include-cache
 
 author:
-  name: "sennta"
-  bio: "在东京做 Java 维护，自学转行 IT，正在学习 Linux、Python 和 ROS2，目标是自动驾驶软件结合验证。"
+  name: "kurogi"
+  bio: "東京でJavaの保守をしています。独学でIT業界に入りました。Linux、Python、ROS2を勉強中で、自動運転ソフトウェアの結合検証を目指しています。"
   links:
     - label: "GitHub"
       icon: "fab fa-fw fa-github"

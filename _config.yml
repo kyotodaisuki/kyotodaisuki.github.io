@@ -1,26 +1,62 @@
-# kurogiの技術ブログ — Minimal Mistakes（Jekyll remote theme）for GitHub Pages
-# GitHub Pagesがmainブランチから自動でサイトを作ります。
-# ローカルで確認する場合（任意）はRuby + Bundlerが必要です：bundle install、bundle exec jekyll serve
 
-title: kurogiの技術ブログ
+# ==========================================
+# Site Settings
+# ==========================================
+title: "kurogiの技術ブログ"
+subtitle: "Engineering, AI & Robotics, and Life in Japan"
+name: "kurogi"
 description: >-
-  東京在住のITエンジニアです
-url: https://kyotodaisuki.github.io
+  東京在住のITエンジニア。
+  ソフトウェア開発・障害分析・テスト自動化の経験を活かし、
+  Linux、Python、AI・ロボティクスの学習記録や、
+  日々の問題解決について記録しています。
+
+url: "https://kyotodaisuki.github.io"
 baseurl: ""
-github_username: kyotodaisuki
-minimal_mistakes_skin: default
+repository: "kyotodaisuki/kyotodaisuki.github.io"
+
+locale: "ja-JP"
+timezone: "Asia/Tokyo"
+
+# ==========================================
+# Theme
+# ==========================================
+remote_theme: "mmistakes/minimal-mistakes"
+minimal_mistakes_skin: "default"
+
+# ==========================================
+# Author Profile
+# ==========================================
+author:
+  name: "kurogi"
+  bio: >-
+    Software Engineer | Java・Linux・Python
+    AI / Robotics を学習中
+  location: "Tokyo, Japan"
+  github: "kyotodaisuki"
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: "https://github.com/kyotodaisuki"
+
+# ==========================================
+# Reading and Navigation
+# ==========================================
 search: true
+breadcrumbs: true
 
+# ==========================================
+# Content
+# ==========================================
 markdown: kramdown
-remote_theme: mmistakes/minimal-mistakes
 permalink: /:categories/:title/
-paginate: 5
-paginate_path: /page:num/
-timezone: Asia/Tokyo
 
-include:
-  - _pages
+paginate: 8
+paginate_path: "/page:num/"
 
+# ==========================================
+# Plugins
+# ==========================================
 plugins:
   - jekyll-paginate
   - jekyll-sitemap
@@ -29,21 +65,14 @@ plugins:
   - jemoji
   - jekyll-include-cache
 
-author:
-  name: "kurogi"
-  bio: "Java開発者。"
-  links:
-    - label: "GitHub"
-      icon: "fab fa-fw fa-github"
-      url: "https://github.com/kyotodaisuki"
+include:
+  - _pages
 
-footer:
-  links:
-    - label: "GitHub"
-      icon: "fab fa-fw fa-github"
-      url: "https://github.com/kyotodaisuki"
-
+# ==========================================
+# Default Layouts
+# ==========================================
 defaults:
+  # Blog posts
   - scope:
       path: ""
       type: posts
@@ -54,16 +83,35 @@ defaults:
       share: true
       related: true
       toc: true
+      show_date: true
+      comments: false
+
+  # Custom pages
   - scope:
       path: "_pages"
       type: pages
     values:
       layout: single
       author_profile: true
+      share: false
+      comments: false
 
+# ==========================================
+# Category and Tag Archives
+# ==========================================
 category_archive:
   type: liquid
   path: /categories/
+
 tag_archive:
   type: liquid
   path: /tags/
+
+# ==========================================
+# Footer
+# ==========================================
+footer:
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: "https://github.com/kyotodaisuki"

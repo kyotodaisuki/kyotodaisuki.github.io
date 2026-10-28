@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page.title | default: site.title }}</title>
+<meta name="description" content="{{ site.description }}">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #050816;
+    color: #eef2ff;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    line-height: 1.7;
+  }
+  a { color: #7dd3fc; }
+  #bg3d {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .topnav {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+  }
+  .topnav a { color: #eef2ff; text-decoration: none; font-weight: 700; }
+  .topnav nav a { margin-left: 18px; font-weight: 500; opacity: 0.9; }
+  .hero {
+    position: relative;
+    z-index: 1;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 90px 20px 40px;
+  }
+  .hero h1 {
+    margin: 0;
+    font-size: clamp(2.2rem, 7vw, 4.2rem);
+    line-height: 1.2;
+    text-shadow: 0 0 24px rgba(34, 211, 238, 0.45);
+  }
+  .hero p {
+    max-width: 640px;
+    margin: 18px 0 0;
+    color: #cbd5e1;
+    font-size: 1.05rem;
+  }
+  .buttons { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .btn {
+    display: inline-block;
+    padding: 11px 22px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 700;
+    border: 1px solid rgba(125, 211, 252, 0.6);
+    background: rgba(8, 47, 73, 0.65);
+    color: #f0f9ff;
+  }
+  .btn.secondary { background: transparent; }
+  .scroll-hint { margin-top: 42px; color: #94a3b8; font-size: 0.9rem; }
+  .posts {
+    position: relative;
+    z-index: 1;
+    background: #050816;
+    padding: 48px 20px 64px;
+  }
+  .posts-inner { max-width: 760px; margin: 0 auto; }
+  .posts h2 { margin: 0 0 20px; font-size: 1.6rem; }
+  .post-card {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .post-card h3 { margin: 0 0 6px; font-size: 1.15rem; line-height: 1.5; }
+  .post-card p { margin: 0; color: #cbd5e1; }
+  .post-meta { color: #94a3b8; font-size: 0.9rem; margin-bottom: 6px; }
+  footer {
+    position: relative;
+    z-index: 1;
+    background: #050816;
+    text-align: center;
+    color: #94a3b8;
+    padding: 0 20px 36px;
+    font-size: 0.9rem;
+  }
+  footer a { color: #94a3b8; }
+  @media (max-width: 600px) {
+    .topnav nav a { margin-left: 10px; font-size: 0.9rem; }
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="bg3d"></canvas>
+
+<header class="topnav">
+  <a href="{{ '/' | relative_url }}">kurogiの技術ブログ</a>
+  <nav>
+    <a href="{{ '/categories/' | relative_url }}">カテゴリ</a>
+    <a href="{{ '/tags/' | relative_url }}">タグ</a>
+    <a href="{{ '/about/' | relative_url }}">自己紹介</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero">
+    <h1>kurogiの技術ブログ</h1>
+    <p>Javaの保守、Linux、Python、ROS2の学習記録です。<br>自動運転ソフトウェアの結合検証エンジニアを目指しています。</p>
+    <div class="buttons">
+      <a class="btn" href="#posts">記事を読む</a>
+      <a class="btn secondary" href="{{ '/categories/' | relative_url }}">カテゴリを見る</a>
+      <a class="btn secondary" href="{{ '/about/' | relative_url }}">自己紹介</a>
+    </div>
+    <div class="scroll-hint">↓ スクロールすると記事一覧があります</div>
+  </section>
+
+  <section class="posts" id="posts">
+    <div class="posts-inner">
+      <h2>最新の記事</h2>
+      {% for post in site.posts limit:10 %}
+      <a class="post-card" href="{{ post.url | relative_url }}">
+        <div class="post-meta">{{ post.date | date: "%Y-%m-%d" }}{% if post.categories %} · {{ post.categories | join: " / " }}{% endif %}</div>
+        <h3>{{ post.title }}</h3>
+        {% if post.excerpt %}<p>{{ post.excerpt | strip_html | truncate: 120 }}</p>{% endif %}
+      </a>
+      {% endfor %}
+      {% if site.posts.size == 0 %}
+      <p>まだ記事がありません。</p>
+      {% endif %}
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>© kurogi · <a href="https://github.com/kyotodaisuki">GitHub</a></p>
+</footer>
+
+<script type="module">
+import * as THREE from 'three';
+
+const canvas = document.getElementById('bg3d');
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 0, 7);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+keyLight.position.set(5, 5, 5);
+scene.add(keyLight);
+const cyanLight = new THREE.PointLight(0x22d3ee, 30, 30);
+cyanLight.position.set(-4, 2, 3);
+scene.add(cyanLight);
+const pinkLight = new THREE.PointLight(0xf472b6, 20, 30);
+pinkLight.position.set(4, -2, 2);
+scene.add(pinkLight);
+
+const isSmall = window.innerWidth < 768;
+const knot = new THREE.Mesh(
+  new THREE.TorusKnotGeometry(1.6, 0.45, 220, 36),
+  new THREE.MeshStandardMaterial({ color: 0x22d3ee, metalness: 0.8, roughness: 0.25 })
+);
+if (isSmall) { knot.scale.setScalar(0.75); }
+scene.add(knot);
+
+const knotWire = new THREE.Mesh(
+  new THREE.TorusKnotGeometry(1.65, 0.47, 120, 20),
+  new THREE.MeshBasicMaterial({ color: 0xf472b6, wireframe: true, transparent: true, opacity: 0.22 })
+);
+if (isSmall) { knotWire.scale.setScalar(0.75); }
+scene.add(knotWire);
+
+const particleCount = isSmall ? 400 : 900;
+const positions = new Float32Array(particleCount * 3);
+for (let i = 0; i < particleCount; i++) {
+  positions[i * 3] = (Math.random() - 0.5) * 22;
+  positions[i * 3 + 1] = (Math.random() - 0.5) * 14;
+  positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+}
+const particleGeometry = new THREE.BufferGeometry();
+particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+const particles = new THREE.Points(particleGeometry, new THREE.PointsMaterial({ color: 0x93c5fd, size: 0.035, transparent: true, opacity: 0.8 }));
+scene.add(particles);
+
+const floats = [];
+const floatGeometry = new THREE.IcosahedronGeometry(0.18, 0);
+const floatMaterial = new THREE.MeshStandardMaterial({ color: 0xa78bfa, metalness: 0.6, roughness: 0.35 });
+for (let i = 0; i < 12; i++) {
+  const mesh = new THREE.Mesh(floatGeometry, floatMaterial);
+  mesh.position.set((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 3);
+  scene.add(mesh);
+  floats.push(mesh);
+}
+
+let mouseX = 0;
+let mouseY = 0;
+window.addEventListener('mousemove', function (event) {
+  mouseX = (event.clientX / window.innerWidth - 0.5) * 2;
+  mouseY = (event.clientY / window.innerHeight - 0.5) * 2;
+});
+
+window.addEventListener('resize', function () {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+function render(time) {
+  const t = time * 0.001;
+  knot.rotation.x = t * 0.22;
+  knot.rotation.y = t * 0.32;
+  knotWire.rotation.x = t * 0.22;
+  knotWire.rotation.y = t * 0.32;
+  particles.rotation.y = t * 0.02;
+  floats.forEach(function (mesh, index) {
+    mesh.rotation.x += 0.008;
+    mesh.rotation.y += 0.01;
+    mesh.position.y += Math.sin(t + index) * 0.0015;
+  });
+  camera.position.x += (mouseX * 0.6 - camera.position.x) * 0.04;
+  camera.position.y += (-mouseY * 0.4 - camera.position.y) * 0.04;
+  camera.lookAt(0, 0, 0);
+  renderer.render(scene, camera);
+}
+
+if (reduced) {
+  render(0);
+} else {
+  renderer.setAnimationLoop(render);
+}
+</script>
+</body>
+</html>

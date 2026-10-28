@@ -4,7 +4,7 @@
 
 title: kurogiの技術ブログ
 description: >-
-  Javaの保守、Linux、Python、ROS2の学習記録です。自動運転ソフトウェアの結合検証エンジニアを目指しています。
+  東京在住のITエンジニアです
 url: https://kyotodaisuki.github.io
 baseurl: ""
 github_username: kyotodaisuki
@@ -31,7 +31,7 @@ plugins:
 
 author:
   name: "kurogi"
-  bio: "東京でJavaの保守をしています。独学でIT業界に入りました。Linux、Python、ROS2を勉強中で、自動運転ソフトウェアの結合検証を目指しています。"
+  bio: "Java開発者。"
   links:
     - label: "GitHub"
       icon: "fab fa-fw fa-github"

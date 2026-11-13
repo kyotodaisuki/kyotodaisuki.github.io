@@ -9,7 +9,7 @@
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    background: #050816;
+    background: #04050d;
     color: #eef2ff;
     font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
     line-height: 1.7;
@@ -45,11 +45,18 @@
     text-align: center;
     padding: 90px 20px 40px;
   }
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(ellipse at center, rgba(4, 5, 13, 0.72) 0%, rgba(4, 5, 13, 0.35) 55%, rgba(4, 5, 13, 0) 100%);
+  }
   .hero h1 {
     margin: 0;
     font-size: clamp(2.2rem, 7vw, 4.2rem);
     line-height: 1.2;
-    text-shadow: 0 0 24px rgba(34, 211, 238, 0.45);
+    text-shadow: 0 0 24px rgba(244, 114, 182, 0.55), 0 2px 12px rgba(0, 0, 0, 0.8);
   }
   .hero p {
     max-width: 640px;
@@ -73,7 +80,7 @@
   .posts {
     position: relative;
     z-index: 1;
-    background: #050816;
+    background: #04050d;
     padding: 48px 20px 64px;
   }
   .posts-inner { max-width: 760px; margin: 0 auto; }
@@ -94,21 +101,72 @@
   footer {
     position: relative;
     z-index: 1;
-    background: #050816;
+    background: #04050d;
     text-align: center;
     color: #94a3b8;
     padding: 0 20px 36px;
     font-size: 0.9rem;
   }
   footer a { color: #94a3b8; }
+  #shatter {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    pointer-events: none;
+  }
+  #intro-skip {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 101;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(249, 168, 212, 0.5);
+    background: rgba(4, 5, 13, 0.55);
+    color: #fbcfe8;
+    font: inherit;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+  }
+  #intro-skip:hover { background: rgba(157, 23, 77, 0.6); }
+  #intro-replay {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: #94a3b8;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  /* オープニング中はブログ本体を隠す */
+  html.intro, html.shattering { overflow: hidden; }
+  html.intro .topnav, html.intro main, html.intro footer { visibility: hidden; }
   @media (max-width: 600px) {
     .topnav nav a { margin-left: 10px; font-size: 0.9rem; }
   }
 </style>
+<script>
+  // オープニングは 1 セッションにつき 1 回だけ再生する
+  (function () {
+    try {
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!reduced && !sessionStorage.getItem('introPlayed')) {
+        document.documentElement.classList.add('intro');
+      }
+    } catch (e) {}
+    // 3D の読み込みに失敗してもブログは必ず表示する
+    setTimeout(function () {
+      if (!window.__introStarted) { document.documentElement.classList.remove('intro'); }
+    }, 8000);
+  })();
+</script>
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js",
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
   }
 }
@@ -116,6 +174,8 @@
 </head>
 <body>
 <canvas id="bg3d"></canvas>
+<canvas id="shatter" aria-hidden="true"></canvas>
+<button id="intro-skip" type="button" hidden>SKIP ▸</button>
 
 <header class="topnav">
   <a href="{{ '/' | relative_url }}">kurogiの技術ブログ</a>
@@ -156,106 +216,9 @@
 </main>
 
 <footer>
-  <p>© kurogi · <a href="https://github.com/kyotodaisuki">GitHub</a></p>
+  <p>© kurogi · <a href="https://github.com/kyotodaisuki">GitHub</a> · <button id="intro-replay" type="button">オープニングをもう一度</button></p>
 </footer>
 
-<script type="module">
-import * as THREE from 'three';
-
-const canvas = document.getElementById('bg3d');
-const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.set(0, 0, 7);
-
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
-keyLight.position.set(5, 5, 5);
-scene.add(keyLight);
-const cyanLight = new THREE.PointLight(0x22d3ee, 30, 30);
-cyanLight.position.set(-4, 2, 3);
-scene.add(cyanLight);
-const pinkLight = new THREE.PointLight(0xf472b6, 20, 30);
-pinkLight.position.set(4, -2, 2);
-scene.add(pinkLight);
-
-const isSmall = window.innerWidth < 768;
-const knot = new THREE.Mesh(
-  new THREE.TorusKnotGeometry(1.6, 0.45, 220, 36),
-  new THREE.MeshStandardMaterial({ color: 0x22d3ee, metalness: 0.8, roughness: 0.25 })
-);
-if (isSmall) { knot.scale.setScalar(0.75); }
-scene.add(knot);
-
-const knotWire = new THREE.Mesh(
-  new THREE.TorusKnotGeometry(1.65, 0.47, 120, 20),
-  new THREE.MeshBasicMaterial({ color: 0xf472b6, wireframe: true, transparent: true, opacity: 0.22 })
-);
-if (isSmall) { knotWire.scale.setScalar(0.75); }
-scene.add(knotWire);
-
-const particleCount = isSmall ? 400 : 900;
-const positions = new Float32Array(particleCount * 3);
-for (let i = 0; i < particleCount; i++) {
-  positions[i * 3] = (Math.random() - 0.5) * 22;
-  positions[i * 3 + 1] = (Math.random() - 0.5) * 14;
-  positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
-}
-const particleGeometry = new THREE.BufferGeometry();
-particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-const particles = new THREE.Points(particleGeometry, new THREE.PointsMaterial({ color: 0x93c5fd, size: 0.035, transparent: true, opacity: 0.8 }));
-scene.add(particles);
-
-const floats = [];
-const floatGeometry = new THREE.IcosahedronGeometry(0.18, 0);
-const floatMaterial = new THREE.MeshStandardMaterial({ color: 0xa78bfa, metalness: 0.6, roughness: 0.35 });
-for (let i = 0; i < 12; i++) {
-  const mesh = new THREE.Mesh(floatGeometry, floatMaterial);
-  mesh.position.set((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 3);
-  scene.add(mesh);
-  floats.push(mesh);
-}
-
-let mouseX = 0;
-let mouseY = 0;
-window.addEventListener('mousemove', function (event) {
-  mouseX = (event.clientX / window.innerWidth - 0.5) * 2;
-  mouseY = (event.clientY / window.innerHeight - 0.5) * 2;
-});
-
-window.addEventListener('resize', function () {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-function render(time) {
-  const t = time * 0.001;
-  knot.rotation.x = t * 0.22;
-  knot.rotation.y = t * 0.32;
-  knotWire.rotation.x = t * 0.22;
-  knotWire.rotation.y = t * 0.32;
-  particles.rotation.y = t * 0.02;
-  floats.forEach(function (mesh, index) {
-    mesh.rotation.x += 0.008;
-    mesh.rotation.y += 0.01;
-    mesh.position.y += Math.sin(t + index) * 0.0015;
-  });
-  camera.position.x += (mouseX * 0.6 - camera.position.x) * 0.04;
-  camera.position.y += (-mouseY * 0.4 - camera.position.y) * 0.04;
-  camera.lookAt(0, 0, 0);
-  renderer.render(scene, camera);
-}
-
-if (reduced) {
-  render(0);
-} else {
-  renderer.setAnimationLoop(render);
-}
-</script>
+<script type="module" src="{{ '/assets/js/home3d.js' | relative_url }}"></script>
 </body>
 </html>

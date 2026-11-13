@@ -1,5 +1,5 @@
 // ホーム画面の 3D 演出:
-// 虚空から巨大なサイバーメカ熊が歩いてきて画面を殴り、
+// 虚空から巨大なメカいちご熊が歩いてきて画面を殴り、
 // 液晶ガラスが割れて崩れ落ち、ブログが現れる。
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -81,19 +81,20 @@ composer.addPass(new OutputPass());
 
 // ---------- materials ----------
 function metal(color, metalness, roughness) {
-  return new THREE.MeshStandardMaterial({ color, metalness, roughness, flatShading: true });
+  return new THREE.MeshStandardMaterial({ color, metalness, roughness });
 }
 function neonMat(color, power) {
   return new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(power), fog: false });
 }
 const M = {
-  pink: metal(0xff2f92, 0.55, 0.36),
-  deep: metal(0x9c1560, 0.65, 0.36),
-  light: metal(0xffa6d0, 0.4, 0.42),
+  pink: metal(0xf23d98, 0.4, 0.36),
+  deep: metal(0xa81868, 0.5, 0.36),
+  light: metal(0xffc2de, 0.3, 0.45),
   steel: metal(0x6f7690, 0.95, 0.28),
   dark: metal(0x12141c, 0.9, 0.42),
   glass: metal(0x05060a, 1.0, 0.08),
-  nose: metal(0x5b1d7a, 0.8, 0.25),
+  nose: metal(0x7a2aa6, 0.6, 0.2),
+  brow: metal(0x4a1763, 0.5, 0.4),
   cyan: neonMat(0x22e6ff, 1.5),
   hot: neonMat(0xff2d95, 1.5),
   eye: neonMat(0x9ff6ff, 2.2),
@@ -136,142 +137,142 @@ function group(parent, x, y, z) {
 }
 const HALF = Math.PI / 2;
 
-// ---------- cyber mecha bear (faces +z, ~19 units tall) ----------
-const LEG = 7.2;
-const HIP_Y = 7.5;
+// ---------- chubby mecha strawberry bear (faces +z, ~19 units tall) ----------
+const LEG = 4.2;
+const HIP_Y = 4.5;
+const ball = (r, mat, parent, x, y, z, sx, sy, sz) => {
+  const m = put(new THREE.Mesh(new THREE.SphereGeometry(r, 36, 24), mat), parent, x, y, z);
+  m.scale.set(sx || 1, sy || 1, sz || 1);
+  return m;
+};
+const capsule = (r, len, mat, parent, x, y, z) =>
+  put(new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 8, 24), mat), parent, x, y, z);
+const ring = (r, tube, mat, parent, x, y, z, rx, ry, rz) =>
+  put(new THREE.Mesh(new THREE.TorusGeometry(r, tube, 8, 40), mat), parent, x, y, z, rx, ry, rz);
 function buildBear() {
   const B = {};
   B.root = new THREE.Group();
   B.hips = group(B.root, 0, HIP_Y, 0);
-  prism(1.6, 1.15, 1.3, 6, M.dark, B.hips, 0, 0.1, 0).scale.set(1.35, 1, 0.9);
-  prism(0.5, 0.5, 4.6, 10, M.steel, B.hips, 0, -0.3, 0, 0, 0, HALF);
-  box(1.3, 1.5, 0.5, M.pink, B.hips, 0, -0.45, 0.95, 0.22);
-  box(0.9, 0.08, 0.08, M.cyan, B.hips, 0, 0.1, 1.28);
-  for (const s of [-1, 1]) {
-    box(0.4, 1.9, 1.7, M.pink, B.hips, s * 2.5, -0.5, 0, 0, 0, s * 0.16);
-    box(0.08, 1.3, 0.08, M.hot, B.hips, s * 2.74, -0.5, 0.6, 0, 0, s * 0.16);
-  }
+  ball(2.5, M.dark, B.hips, 0, 0.4, 0, 1.3, 0.6, 1.0);
+  prism(0.6, 0.6, 5.2, 12, M.steel, B.hips, 0, -0.3, 0, 0, 0, HALF);
 
+  // short, stubby legs
   function leg(side) {
-    const hip = group(B.hips, side * 1.55, -0.3, 0);
-    prism(0.6, 0.5, 3.0, 8, M.dark, hip, 0, -1.6, 0);
-    prism(1.2, 0.85, 2.6, 6, M.pink, hip, 0, -1.5, 0).scale.z = 1.12;
-    box(0.5, 1.9, 0.3, M.deep, hip, 0, -1.45, 1.05, -0.12);
-    box(0.08, 1.7, 0.08, M.cyan, hip, side * 1.0, -1.5, 0.3);
-    const knee = group(hip, 0, -3.3, 0);
-    prism(0.62, 0.62, 2.1, 10, M.steel, knee, 0, 0, 0, 0, 0, HALF);
-    prism(0.15, 0.8, 1.5, 4, M.pink, knee, 0, 0.3, 0.8, 0.3, Math.PI / 4);
-    prism(0.5, 0.5, 3.2, 8, M.dark, knee, 0, -1.7, 0);
-    prism(0.8, 1.4, 2.8, 6, M.pink, knee, 0, -1.85, 0);
-    box(0.62, 2.3, 0.3, M.deep, knee, 0, -1.8, 1.08, 0.2);
-    box(0.1, 1.7, 0.06, M.cyan, knee, 0, -1.8, 1.27, 0.2);
-    prism(0.42, 0.62, 1.0, 8, M.steel, knee, 0, -1.3, -1.2, -0.5);
-    prism(0.3, 0.3, 0.05, 8, M.hot, knee, 0, -1.78, -1.47, -0.5);
-    prism(0.5, 0.5, 1.9, 8, M.steel, knee, 0, -3.25, 0, 0, 0, HALF);
-    box(2.3, 0.35, 3.7, M.dark, knee, 0, -3.72, 0.5);
-    box(2.1, 0.85, 2.1, M.pink, knee, 0, -3.2, 0.95, 0.28);
-    box(1.7, 0.95, 1.0, M.deep, knee, 0, -3.2, -0.85);
-    box(1.6, 0.07, 0.07, M.hot, knee, 0, -3.5, 2.37);
-    for (const k of [-0.7, 0, 0.7]) {
-      put(new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.0, 4), M.steel), knee, k, -3.62, 2.7, HALF);
+    const hip = group(B.hips, side * 2.0, -0.3, 0);
+    ball(1.1, M.dark, hip, 0, 0, 0);
+    capsule(1.3, 0.5, M.pink, hip, 0, -1.0, 0);
+    ring(1.18, 0.09, M.dark, hip, 0, -1.75, 0, HALF);
+    const knee = group(hip, 0, -2.0, 0);
+    prism(0.75, 0.75, 2.5, 14, M.steel, knee, 0, 0, 0, 0, 0, HALF);
+    ball(0.7, M.deep, knee, 0, 0.05, 1.05, 1, 1, 0.5);
+    capsule(1.35, 0.25, M.pink, knee, 0, -0.85, 0);
+    ring(1.3, 0.06, M.cyan, knee, 0, -1.3, 0, HALF);
+    ring(1.25, 0.14, M.dark, knee, 0, -1.5, 0, HALF);
+    for (const k of [-1, 1]) prism(0.1, 0.1, 1.5, 6, M.steel, knee, k * 0.8, -0.8, -1.25, 0.1);
+    ball(1.55, M.pink, knee, 0, -1.72, 0.6, 1.05, 0.5, 1.5);
+    put(new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.55, 0.3, 24), M.dark), knee, 0, -2.05, 0.6).scale.z = 1.45;
+    ball(0.6, M.light, knee, 0, -1.25, 1.9, 1.3, 0.35, 1);
+    for (const k of [-0.75, 0, 0.75]) {
+      put(new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.8, 6), M.steel), knee, k, -1.95, 2.85, HALF);
     }
-    hip.rotation.z = side * 0.07;
     return { hip, knee };
   }
   B.legL = leg(1);
   B.legR = leg(-1);
 
-  // torso: narrow waist, keel-shaped chest
-  B.torso = group(B.hips, 0, 0.6, 0);
-  for (let i = 0; i < 3; i++) {
-    prism(1.38, 1.28, 0.46, 10, M.dark, B.torso, 0, 0.3 + i * 0.55, 0);
-    prism(1.05, 1.05, 0.1, 10, M.steel, B.torso, 0, 0.58 + i * 0.55, 0);
-    box(1.5 + i * 0.25, 0.42, 0.3, M.light, B.torso, 0, 0.3 + i * 0.55, 1.28);
+  // big round belly
+  B.torso = group(B.hips, 0, 0.3, 0);
+  ball(4.3, M.pink, B.torso, 0, 3.6, 0, 1.06, 1.0, 0.95);
+  ball(3.3, M.light, B.torso, 0, 3.1, 2.25, 1.0, 1.05, 0.6);
+  // armour seams + rivets
+  ring(4.33, 0.07, M.dark, B.torso, 0, 3.6, 0, HALF).scale.set(1.06, 0.95, 1);
+  ring(4.33, 0.06, M.dark, B.torso, 0, 3.6, 0, 0, HALF).scale.set(0.95, 1, 1);
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2;
+    ball(0.13, M.steel, B.torso, Math.sin(a) * 4.58, 3.95, Math.cos(a) * 4.1);
   }
-  for (const s of [-1, 1]) prism(0.1, 0.1, 1.9, 6, M.steel, B.torso, s * 1.5, 0.9, 0.2, 0, 0, s * -0.2);
-  prism(3.4, 1.9, 3.5, 6, M.pink, B.torso, 0, 3.55, 0).scale.z = 0.82;
-  prism(1.7, 2.7, 0.8, 6, M.dark, B.torso, 0, 5.6, 0).scale.z = 0.82;
-  prism(0.75, 0.85, 1.0, 8, M.dark, B.torso, 0, 6.3, 0.1);
+  for (let i = -1; i <= 1; i++) {
+    ring(3.2 - Math.abs(i) * 0.5, 0.045, M.deep, B.torso, 0, 3.1 + i * 1.3, 2.3 + (1 - Math.abs(i)) * 0.0, HALF).scale.set(1, 0.6, 1);
+  }
+  // belly reactor
+  ring(0.95, 0.2, M.steel, B.torso, 0, 3.3, 4.2);
+  B.core = put(new THREE.Mesh(new THREE.CircleGeometry(0.85, 24), M.cyan), B.torso, 0, 3.3, 4.22);
+  B.coreGlow = glow(0x1596b0, 3.2, B.torso, 0, 3.3, 4.5);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    ball(0.1, M.steel, B.torso, Math.cos(a) * 1.35, 3.3 + Math.sin(a) * 1.35, 4.12);
+  }
+  // chest vents
   for (const s of [-1, 1]) {
-    box(1.75, 1.35, 0.4, M.deep, B.torso, s * 1.2, 4.3, 1.85, -0.12, s * 0.52);
-    box(1.6, 0.08, 0.08, M.hot, B.torso, s * 1.2, 3.55, 1.95, -0.12, s * 0.52);
-    box(0.9, 0.5, 0.3, M.dark, B.torso, s * 1.35, 2.75, 1.45, -0.1, s * 0.52);
-    for (let i = 0; i < 3; i++) box(0.7, 0.05, 0.06, M.cyan, B.torso, s * 1.35, 2.62 + i * 0.13, 1.62, -0.1, s * 0.52);
+    for (let i = 0; i < 3; i++) box(0.9, 0.09, 0.1, M.hot, B.torso, s * 2.5, 5.7 + i * 0.28, 3.0 - i * 0.2, -0.45, s * 0.6);
+    prism(0.42, 0.5, 3.6, 10, M.steel, B.torso, s * 2.1, 6.9, -3.0, -0.3);
+    prism(0.5, 0.5, 0.35, 10, M.dark, B.torso, s * 2.1, 8.6, -3.52, -0.3);
+    prism(0.3, 0.3, 0.06, 10, M.hot, B.torso, s * 2.1, 8.78, -3.58, -0.3);
   }
-  prism(0.5, 0.5, 8.0, 10, M.steel, B.torso, 0, 4.8, 0, 0, 0, HALF);
-  // reactor
-  prism(0.85, 0.85, 0.5, 6, M.steel, B.torso, 0, 3.25, 2.1, HALF);
-  B.core = put(new THREE.Mesh(new THREE.CircleGeometry(0.58, 6), M.cyan), B.torso, 0, 3.25, 2.37);
-  B.coreGlow = glow(0x1596b0, 2.6, B.torso, 0, 3.25, 2.6);
-  // back pack, thrusters, binders
-  box(3.2, 2.8, 1.5, M.dark, B.torso, 0, 3.9, -2.0);
-  for (const s of [-1, 1]) {
-    prism(0.55, 0.85, 1.7, 8, M.steel, B.torso, s * 0.95, 2.5, -2.6, 0.5);
-    box(0.36, 5.2, 1.7, M.pink, B.torso, s * 2.7, 6.6, -2.6, -0.3, 0, -s * 0.42);
-    box(0.1, 4.6, 0.1, M.cyan, B.torso, s * 2.92, 6.6, -1.85, -0.3, 0, -s * 0.42);
-  }
+  box(3.4, 3.2, 1.4, M.dark, B.torso, 0, 4.2, -3.6);
+  ring(2.1, 0.5, M.dark, B.torso, 0, 7.5, 0.15, HALF);
+  ring(2.35, 0.06, M.cyan, B.torso, 0, 7.5, 0.15, HALF);
 
-  // head
-  B.head = group(B.torso, 0, 6.8, 0.3);
-  B.head.scale.setScalar(1.3);
-  put(new THREE.Mesh(new THREE.IcosahedronGeometry(1.55, 1), M.pink), B.head, 0, 1.1, 0).scale.set(1.15, 0.95, 1.05);
-  box(2.6, 0.55, 0.5, M.glass, B.head, 0, 1.28, 1.3);
-  prism(0.5, 0.95, 1.0, 6, M.light, B.head, 0, 0.6, 1.7, HALF);
-  box(0.55, 0.3, 0.25, M.nose, B.head, 0, 0.86, 2.2);
-  box(1.6, 0.5, 1.2, M.steel, B.head, 0, 0.0, 1.2, 0.12);
-  for (let i = -1; i <= 1; i++) box(0.1, 0.26, 0.06, M.hot, B.head, i * 0.32, 0.0, 1.83, 0.12);
-  prism(0.12, 0.4, 1.5, 4, M.steel, B.head, 0, 2.3, 0.95, -0.55, Math.PI / 4);
+  // big round head
+  B.head = group(B.torso, 0, 7.5, 0.3);
+  ball(3.0, M.pink, B.head, 0, 2.5, 0, 1.12, 0.95, 1.0);
+  ring(3.02, 0.05, M.dark, B.head, 0, 2.5, 0, 0, HALF).scale.set(1, 0.95, 1);
+  ball(1.5, M.light, B.head, 0, 1.65, 2.35, 1.3, 0.92, 0.8);
+  ball(0.56, M.nose, B.head, 0, 2.25, 3.42, 1.4, 0.95, 0.8);
+  box(0.09, 0.7, 0.09, M.dark, B.head, 0, 1.6, 3.5, 0.15);
+  put(new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.06, 6, 20, Math.PI), M.dark), B.head, 0, 1.6, 3.28, 0.3, 0, Math.PI);
   B.eyeGlows = [];
   for (const s of [-1, 1]) {
-    box(0.66, 0.15, 0.1, M.eye, B.head, s * 0.62, 1.3, 1.57, 0, 0, -s * 0.3);
-    B.eyeGlows.push(glow(0x1b8fa6, 1.3, B.head, s * 0.62, 1.3, 1.75));
-    box(1.55, 0.4, 0.8, M.deep, B.head, s * 0.75, 1.74, 1.2, 0.1, s * 0.2, -s * 0.32);
-    box(0.3, 1.2, 1.3, M.deep, B.head, s * 1.6, 0.55, 0.7);
-    prism(0.9, 0.9, 0.46, 10, M.pink, B.head, s * 1.55, 2.45, -0.1, HALF);
-    put(new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.11, 6, 10), M.steel), B.head, s * 1.55, 2.45, 0.12);
-    put(new THREE.Mesh(new THREE.CircleGeometry(0.5, 10), M.hot), B.head, s * 1.55, 2.45, 0.15);
+    prism(0.56, 0.56, 0.5, 20, M.glass, B.head, s * 1.2, 3.1, 2.55, HALF - 0.2, 0, 0);
+    ring(0.58, 0.09, M.steel, B.head, s * 1.2, 3.15, 2.78, -0.2, s * 0.25);
+    ball(0.27, M.eye, B.head, s * 1.2, 3.13, 2.82);
+    B.eyeGlows.push(glow(0x1b8fa6, 1.3, B.head, s * 1.2, 3.13, 3.1));
+    // heavy angry brows
+    box(1.75, 0.46, 0.7, M.brow, B.head, s * 1.25, 3.78, 2.42, -0.3, s * 0.25, s * 0.42);
+    // round ears
+    prism(1.3, 1.3, 0.75, 28, M.pink, B.head, s * 2.85, 4.85, -0.1, HALF);
+    ring(1.3, 0.12, M.deep, B.head, s * 2.85, 4.85, 0.25);
+    put(new THREE.Mesh(new THREE.CircleGeometry(0.85, 24), M.light), B.head, s * 2.85, 4.85, 0.29);
+    ring(0.85, 0.05, M.hot, B.head, s * 2.85, 4.85, 0.3);
+    prism(0.35, 0.35, 0.4, 10, M.steel, B.head, s * 3.35, 2.1, 0.3, 0, 0, HALF);
+    ball(0.11, M.steel, B.head, s * 2.2, 4.0, 2.0);
+    ball(0.11, M.steel, B.head, s * 2.75, 3.1, 1.6);
   }
-  box(0.08, 1.5, 0.4, M.steel, B.head, 2.2, 3.4, -0.4);
-  B.antenna = glow(0xaa1122, 0.6, B.head, 2.2, 4.2, -0.4);
+  prism(0.05, 0.05, 1.8, 6, M.steel, B.head, 1.3, 6.0, -0.6);
+  B.antenna = glow(0xaa1122, 0.7, B.head, 1.3, 6.95, -0.6);
 
+  // thick arms, huge round fists
   function arm(side) {
-    const shoulder = group(B.torso, side * 4.0, 4.8, 0);
-    prism(1.0, 1.75, 2.0, 6, M.pink, shoulder, side * 0.2, 0.5, 0);
-    prism(0.45, 1.05, 0.5, 6, M.deep, shoulder, side * 0.2, 1.7, 0);
-    put(new THREE.Mesh(new THREE.TorusGeometry(1.66, 0.06, 4, 6), M.cyan), shoulder, side * 0.2, -0.46, 0, HALF, 0, Math.PI / 6);
-    put(new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.2, 4), M.steel), shoulder, side * 1.7, 0.7, 0, 0, 0, -side * HALF);
-    prism(0.6, 0.55, 2.6, 8, M.dark, shoulder, 0, -1.8, 0);
-    box(0.5, 1.8, 1.4, M.pink, shoulder, side * 0.62, -1.9, 0);
-    const elbow = group(shoulder, 0, -3.2, 0);
-    prism(0.68, 0.68, 1.9, 10, M.steel, elbow, 0, 0, 0, 0, 0, HALF);
-    prism(0.6, 0.4, 0.9, 8, M.steel, elbow, 0, 0.5, -0.95, 0.5);
-    const flame = put(new THREE.Mesh(new THREE.ConeGeometry(0.42, 3.4, 8, 1, true),
+    const shoulder = group(B.torso, side * 5.0, 5.7, 0);
+    ball(1.75, M.deep, shoulder, 0, 0.1, 0);
+    ring(1.76, 0.07, M.cyan, shoulder, 0, 0.1, 0, 0, HALF);
+    capsule(1.25, 0.9, M.pink, shoulder, 0, -1.75, 0);
+    const elbow = group(shoulder, 0, -3.0, 0);
+    ball(1.1, M.dark, elbow, 0, 0, 0);
+    prism(0.7, 0.7, 2.5, 12, M.steel, elbow, 0, 0, 0, 0, 0, HALF);
+    prism(0.6, 0.4, 0.9, 10, M.steel, elbow, 0, 0.5, -1.15, 0.5);
+    const flame = put(new THREE.Mesh(new THREE.ConeGeometry(0.42, 3.4, 10, 1, true),
       new THREE.MeshBasicMaterial({
         color: new THREE.Color(0x66f0ff).multiplyScalar(1.6), transparent: true, opacity: 0.8,
         blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide,
-      })), elbow, 0, 2.3, -1.95, 0.5);
-    const flare = glow(0x2aa6bd, 3, elbow, 0, 0.95, -1.2);
-    prism(0.6, 0.6, 3.0, 8, M.dark, elbow, 0, -1.5, 0);
-    prism(1.0, 1.6, 2.6, 6, M.pink, elbow, 0, -1.9, 0);
-    box(0.7, 2.2, 0.3, M.deep, elbow, 0, -1.9, 1.25, 0.22);
-    box(0.1, 2.0, 0.08, M.cyan, elbow, 0, -1.9, 1.44, 0.22);
-    box(0.08, 2.0, 0.1, M.cyan, elbow, side * 1.27, -1.9, 0, 0, 0, -side * 0.22);
-    for (const k of [-1, 1]) prism(0.1, 0.1, 2.4, 6, M.steel, elbow, k * 0.7, -1.6, -1.0, -0.15);
-    prism(1.45, 1.45, 0.4, 8, M.steel, elbow, 0, -3.35, 0);
-    // mechanical fist: -y is the striking face
-    const fist = group(elbow, 0, -4.4, 0);
-    box(2.5, 1.6, 2.2, M.dark, fist, 0, 0, 0);
-    box(2.75, 1.0, 2.45, M.pink, fist, 0, 0.42, 0);
-    box(2.0, 0.08, 0.08, M.cyan, fist, 0, -0.12, 1.24);
+      })), elbow, 0, 2.3, -2.15, 0.5);
+    const flare = glow(0x2aa6bd, 3, elbow, 0, 0.95, -1.4);
+    capsule(1.4, 0.8, M.pink, elbow, 0, -1.6, 0);
+    for (const k of [-1, 1]) prism(0.1, 0.1, 2.0, 6, M.steel, elbow, k * 0.8, -1.4, -1.3, -0.1);
+    ring(1.42, 0.06, M.cyan, elbow, 0, -1.2, 0, HALF);
+    ring(1.3, 0.2, M.dark, elbow, 0, -2.75, 0, HALF);
+    // -y is the striking face
+    const fist = group(elbow, 0, -3.7, 0);
+    ball(1.85, M.pink, fist, 0, 0, 0, 1.0, 0.82, 1.0);
+    ring(1.86, 0.06, M.dark, fist, 0, 0, 0, HALF).scale.set(1, 1, 1);
+    ball(1.0, M.light, fist, 0, -0.75, -0.75, 1.2, 0.6, 0.9);
     for (let i = 0; i < 4; i++) {
-      const fxp = -0.96 + i * 0.64;
-      box(0.56, 0.8, 2.0, M.steel, fist, fxp, -0.8, 0);
-      box(0.5, 0.3, 0.7, M.deep, fist, fxp, -1.25, 0.45);
-      put(new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 4), M.steel), fist, fxp, -1.55, 0.45, Math.PI);
-      if (i < 3) box(0.06, 0.1, 1.9, M.hot, fist, fxp + 0.32, -1.16, 0);
+      const fxp = -0.99 + i * 0.66;
+      ball(0.46, M.steel, fist, fxp, -1.25, 0.55, 1, 0.9, 1.3);
+      if (i < 3) box(0.07, 0.3, 1.1, M.hot, fist, fxp + 0.33, -1.38, 0.55);
     }
-    box(0.7, 0.9, 1.2, M.steel, fist, -side * 1.5, -0.5, 0.3);
-    const tip = group(fist, 0, -1.6, 0.2);
+    ball(0.6, M.pink, fist, -side * 1.6, -0.5, 0.5, 0.8, 1, 1.1);
+    const tip = group(fist, 0, -1.65, 0.3);
     return { shoulder, elbow, fist, tip, flame, flare };
   }
   B.armL = arm(1);
@@ -360,7 +361,7 @@ function updateSparks(dt) {
 const STAND = {
   bx: 0, by: 0, bz: 0,
   tx: 0.08, ty: 0, tz: 0, hx: 0, hy: 0,
-  sRx: -0.1, sRz: -0.3, eR: -0.55, sLx: -0.1, sLz: 0.3, eL: -0.55,
+  sRx: -0.1, sRz: -0.42, eR: -0.5, sLx: -0.1, sLz: 0.42, eL: -0.5,
   hipL: 0, kneeL: 0, hipR: 0, kneeR: 0,
   boost: 0, flare: 1,
 };
@@ -412,11 +413,11 @@ const PUNCH_DIR = new THREE.Vector3(-0.02, 0.34, -1).normalize();
 const FIST_TARGET = CAM.clone().addScaledVector(PUNCH_DIR, 2.0);
 const WIND = Object.assign({}, STAND, {
   tx: -0.12, ty: -0.62, sRx: 1.05, sRz: -0.55, eR: -2.1, sLx: -0.7, sLz: 0.35, eL: -1.2,
-  hipL: -0.45, kneeL: 0.35, hipR: 0.3, by: -0.6, hx: 0.12, hy: 0.3, boost: 0.45, flare: 1.8,
+  hipL: -0.45, kneeL: 0.35, hipR: 0.3, by: -0.22, hx: 0.12, hy: 0.3, boost: 0.45, flare: 1.8,
 });
 const PUNCH = Object.assign({}, STAND, {
   tx: 0.5, ty: 0.62, tz: -0.08, sRx: -1.2, sRz: 0.0, eR: -0.04, sLx: 0.9, sLz: 0.45, eL: -1.5,
-  hipL: -0.9, kneeL: 1.1, hipR: 0.5, kneeR: 0.15, by: -2.1, hx: -0.5, hy: -0.3, boost: 1.5, flare: 2.2,
+  hipL: -0.9, kneeL: 1.1, hipR: 0.5, kneeR: 0.15, by: -0.75, hx: -0.5, hy: -0.3, boost: 1.5, flare: 2.2,
 });
 (function solvePunch() {
   const v = new THREE.Vector3();
@@ -437,17 +438,17 @@ const PUNCH = Object.assign({}, STAND, {
   PUNCH.bz = FIST_TARGET.z - v.z;
 })();
 
-const Z_START = -70;
-const Z_STAND = PUNCH.bz - 4.5;
+const Z_START = -50;
+const Z_STAND = PUNCH.bz - 3.4;
 const X_STAND = PUNCH.bx * 0.35;
 WIND.bz = Z_STAND + 1.0;
 WIND.bx = PUNCH.bx * 0.55;
 const READY = Object.assign({}, STAND, {
-  bz: Z_STAND, bx: X_STAND, by: -0.35, tx: 0.16, sRz: -0.5, sLz: 0.5, eR: -0.95, eL: -0.95,
-  hipL: -0.12, hipR: 0.12, hx: -0.12, flare: 1.9,
+  bz: Z_STAND, bx: X_STAND, by: -0.05, tx: 0.16, sRz: -0.62, sLz: 0.62, eR: -0.95, eL: -0.95,
+  hipL: -0.12, hipR: 0.12, hx: 0.3, flare: 1.9,
 });
-const STEPS = 7;
-const T_WALK = 5.6, T_HOLD = 0.5, T_WIND = 0.5, T_STRIKE = 0.12, T_CRACK = 1.15, T_SHARDS = 2.1;
+const STEPS = 11;
+const T_WALK = 6.2, T_HOLD = 0.5, T_WIND = 0.5, T_STRIKE = 0.12, T_CRACK = 1.15, T_SHARDS = 2.1;
 const T_IMPACT = T_WALK + T_HOLD + T_WIND + T_STRIKE;
 const T_SHATTER = T_IMPACT + T_CRACK;
 
@@ -467,13 +468,13 @@ function walkPose(u) {
   p.by = LEG * (Math.cos(A * s) - 1) - 0.25 * Math.pow(Math.abs(s), 6);
   p.hipL = -A * s; p.kneeL = 1.0 * Math.max(0, c) * settle;
   p.hipR = A * s; p.kneeR = 1.0 * Math.max(0, -c) * settle;
-  p.tz = 0.035 * s; p.ty = 0.16 * s; p.tx = 0.14;
+  p.tz = 0.06 * s; p.ty = 0.16 * s; p.tx = 0.1;
   p.sRx = -0.15 - 0.22 * s; p.sLx = -0.15 + 0.22 * s;
   p.eR = -0.8; p.eL = -0.8;
-  p.hx = -0.06 - 0.1 * u; p.hy = -0.16 * s;
+  p.hx = 0.08 + 0.2 * u; p.hy = -0.16 * s;
   if (k !== lastStep && k >= 0) {
     lastStep = k;
-    const fx0 = p.bx + (k % 2 ? 1.6 : -1.6), fz0 = p.bz + 3.4;
+    const fx0 = p.bx + (k % 2 ? 2.0 : -2.0), fz0 = p.bz + 2.6;
     shakeAmp = Math.max(shakeAmp, 0.08 + 0.75 * u * u);
     shockwave(fx0, fz0, 0.7 + u);
     emitSparks(fx0, 0.2, fz0 + 1, 34, 7);

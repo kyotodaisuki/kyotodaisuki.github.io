@@ -138,7 +138,7 @@ function group(parent, x, y, z) {
 const HALF = Math.PI / 2;
 
 // ---------- chubby mecha strawberry bear (faces +z, ~19 units tall) ----------
-const LEG = 4.2;
+const LEG = 3.5; // hip joint to ankle joint
 const HIP_Y = 4.5;
 const ball = (r, mat, parent, x, y, z, sx, sy, sz) => {
   const m = put(new THREE.Mesh(new THREE.SphereGeometry(r, 36, 24), mat), parent, x, y, z);
@@ -169,13 +169,14 @@ function buildBear() {
     ring(1.3, 0.06, M.cyan, knee, 0, -1.3, 0, HALF);
     ring(1.25, 0.14, M.dark, knee, 0, -1.5, 0, HALF);
     for (const k of [-1, 1]) prism(0.1, 0.1, 1.5, 6, M.steel, knee, k * 0.8, -0.8, -1.25, 0.1);
-    ball(1.55, M.pink, knee, 0, -1.72, 0.6, 1.05, 0.5, 1.5);
-    put(new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.55, 0.3, 24), M.dark), knee, 0, -2.05, 0.6).scale.z = 1.45;
-    ball(0.6, M.light, knee, 0, -1.25, 1.9, 1.3, 0.35, 1);
+    const foot = group(knee, 0, -1.5, 0);
+    ball(1.55, M.pink, foot, 0, -0.22, 0.6, 1.05, 0.5, 1.5);
+    put(new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.55, 0.3, 24), M.dark), foot, 0, -0.55, 0.6).scale.z = 1.45;
+    ball(0.6, M.light, foot, 0, 0.25, 1.9, 1.3, 0.35, 1);
     for (const k of [-0.75, 0, 0.75]) {
-      put(new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.8, 6), M.steel), knee, k, -1.95, 2.85, HALF);
+      put(new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.8, 6), M.steel), foot, k, -0.45, 2.85, HALF);
     }
-    return { hip, knee };
+    return { hip, knee, foot };
   }
   B.legL = leg(1);
   B.legR = leg(-1);
@@ -261,18 +262,23 @@ function buildBear() {
     for (const k of [-1, 1]) prism(0.1, 0.1, 2.0, 6, M.steel, elbow, k * 0.8, -1.4, -1.3, -0.1);
     ring(1.42, 0.06, M.cyan, elbow, 0, -1.2, 0, HALF);
     ring(1.3, 0.2, M.dark, elbow, 0, -2.75, 0, HALF);
-    // -y is the striking face
+    // clenched fist: knuckles lead (-y), back of the hand is +z, fingers curl under to the palm (-z)
     const fist = group(elbow, 0, -3.7, 0);
-    ball(1.85, M.pink, fist, 0, 0, 0, 1.0, 0.82, 1.0);
-    ring(1.86, 0.06, M.dark, fist, 0, 0, 0, HALF).scale.set(1, 1, 1);
-    ball(1.0, M.light, fist, 0, -0.75, -0.75, 1.2, 0.6, 0.9);
+    ball(1.7, M.pink, fist, 0, 0.1, 0, 1.08, 0.8, 0.92);
+    ball(1.25, M.deep, fist, 0, 0.15, 0.75, 1.15, 0.8, 0.7);
+    ring(0.8, 0.05, M.cyan, fist, 0, 0.15, 1.6, 0.1);
     for (let i = 0; i < 4; i++) {
-      const fxp = -0.99 + i * 0.66;
-      ball(0.46, M.steel, fist, fxp, -1.25, 0.55, 1, 0.9, 1.3);
-      if (i < 3) box(0.07, 0.3, 1.1, M.hot, fist, fxp + 0.33, -1.38, 0.55);
+      const fxp = -1.05 + i * 0.7;
+      // first finger bone runs across the striking face, second folds back into the palm
+      put(new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 1.3, 6, 14), M.pink), fist, fxp, -1.2, 0.0, HALF);
+      put(new THREE.Mesh(new THREE.CapsuleGeometry(0.32, 0.6, 6, 14), M.pink), fist, fxp, -0.75, -0.95);
+      ball(0.4, M.steel, fist, fxp, -1.2, 0.8, 1, 1, 1.1);
+      if (i < 3) box(0.06, 0.5, 1.5, M.hot, fist, fxp + 0.35, -1.1, 0.0);
     }
-    ball(0.6, M.pink, fist, -side * 1.6, -0.5, 0.5, 0.8, 1, 1.1);
-    const tip = group(fist, 0, -1.65, 0.3);
+    // thumb wraps across the curled fingers from the inner side
+    put(new THREE.Mesh(new THREE.CapsuleGeometry(0.36, 1.0, 6, 14), M.deep), fist, -side * 0.75, -0.55, -1.42, 0, 0, HALF + side * 0.25);
+    ball(0.5, M.deep, fist, -side * 1.55, -0.2, -1.0);
+    const tip = group(fist, 0, -1.6, 0.1);
     return { shoulder, elbow, fist, tip, flame, flare };
   }
   B.armL = arm(1);
@@ -383,6 +389,8 @@ function applyPose(p, t) {
   bear.legL.knee.rotation.x = p.kneeL;
   bear.legR.hip.rotation.x = p.hipR;
   bear.legR.knee.rotation.x = p.kneeR;
+  bear.legL.foot.rotation.x = -(p.hipL + p.kneeL) * 0.85;
+  bear.legR.foot.rotation.x = -(p.hipR + p.kneeR) * 0.85;
   const flick = 0.85 + 0.15 * Math.sin((t || 0) * 90);
   bear.armR.flame.visible = bear.armR.flare.visible = p.boost > 0.01;
   bear.armL.flame.visible = bear.armL.flare.visible = false;
@@ -413,11 +421,11 @@ const PUNCH_DIR = new THREE.Vector3(-0.02, 0.34, -1).normalize();
 const FIST_TARGET = CAM.clone().addScaledVector(PUNCH_DIR, 2.0);
 const WIND = Object.assign({}, STAND, {
   tx: -0.12, ty: -0.62, sRx: 1.05, sRz: -0.55, eR: -2.1, sLx: -0.7, sLz: 0.35, eL: -1.2,
-  hipL: -0.45, kneeL: 0.35, hipR: 0.3, by: -0.22, hx: 0.12, hy: 0.3, boost: 0.45, flare: 1.8,
+  hipL: -0.45, kneeL: 0.35, hipR: 0.3, by: -0.2, hx: 0.12, hy: 0.3, boost: 0.45, flare: 1.8,
 });
 const PUNCH = Object.assign({}, STAND, {
   tx: 0.5, ty: 0.62, tz: -0.08, sRx: -1.2, sRz: 0.0, eR: -0.04, sLx: 0.9, sLz: 0.45, eL: -1.5,
-  hipL: -0.9, kneeL: 1.1, hipR: 0.5, kneeR: 0.15, by: -0.75, hx: -0.5, hy: -0.3, boost: 1.5, flare: 2.2,
+  hipL: -0.9, kneeL: 1.1, hipR: 0.5, kneeR: 0.15, by: -0.72, hx: -0.5, hy: -0.3, boost: 1.5, flare: 2.2,
 });
 (function solvePunch() {
   const v = new THREE.Vector3();
@@ -438,7 +446,6 @@ const PUNCH = Object.assign({}, STAND, {
   PUNCH.bz = FIST_TARGET.z - v.z;
 })();
 
-const Z_START = -50;
 const Z_STAND = PUNCH.bz - 3.4;
 const X_STAND = PUNCH.bx * 0.35;
 WIND.bz = Z_STAND + 1.0;
@@ -447,34 +454,43 @@ const READY = Object.assign({}, STAND, {
   bz: Z_STAND, bx: X_STAND, by: -0.05, tx: 0.16, sRz: -0.62, sLz: 0.62, eR: -0.95, eL: -0.95,
   hipL: -0.12, hipR: 0.12, hx: 0.3, flare: 1.9,
 });
-const STEPS = 11;
-const T_WALK = 6.2, T_HOLD = 0.5, T_WIND = 0.5, T_STRIKE = 0.12, T_CRACK = 1.15, T_SHARDS = 2.1;
+const STEPS = 12;
+const T_WALK = 6.6, T_HOLD = 0.5, T_WIND = 0.5, T_STRIKE = 0.12, T_CRACK = 1.15, T_SHARDS = 2.1;
 const T_IMPACT = T_WALK + T_HOLD + T_WIND + T_STRIKE;
 const T_SHATTER = T_IMPACT + T_CRACK;
 
 let lastStep = -1;
+const GAIT_A = 0.52;
+const STRIDE = 2 * LEG * Math.sin(GAIT_A);
 function walkPose(u) {
-  // each step lunges then slams: a heavy, deliberate gait
+  // each step: the planted leg stays locked to the floor and the body rolls over it
   const q = u * STEPS - 0.5;
   const k = Math.floor(q), f = q - k;
-  const w = f + (ease(ease(f)) - f) * 0.75;
+  const w = f + (ease(f) - f) * 0.3;
   const ph = (k + w + 0.5) * Math.PI;
   const s = Math.sin(ph), c = Math.cos(ph);
-  const A = 0.5;
-  const settle = 1 - clamp01((u - 0.95) / 0.05);
+  const leftStance = ((k % 2) + 2) % 2 === 0;
+  const sg = leftStance ? -s : s; // -1 at foot strike, +1 at push-off
+  const stance = GAIT_A * sg;
+  const settle = 1 - clamp01((u - 0.96) / 0.04);
   const p = Object.assign({}, STAND);
-  p.bz = Z_START + (Z_STAND - Z_START) * clamp01(ph / (STEPS * Math.PI));
-  p.bx = X_STAND * u;
-  p.by = LEG * (Math.cos(A * s) - 1) - 0.25 * Math.pow(Math.abs(s), 6);
-  p.hipL = -A * s; p.kneeL = 1.0 * Math.max(0, c) * settle;
-  p.hipR = A * s; p.kneeR = 1.0 * Math.max(0, -c) * settle;
-  p.tz = 0.06 * s; p.ty = 0.16 * s; p.tx = 0.1;
-  p.sRx = -0.15 - 0.22 * s; p.sLx = -0.15 + 0.22 * s;
-  p.eR = -0.8; p.eL = -0.8;
-  p.hx = 0.08 + 0.2 * u; p.hy = -0.16 * s;
+  p.bz = Z_STAND - (STEPS - 1 - k) * STRIDE + LEG * Math.sin(stance);
+  p.by = LEG * (Math.cos(stance) - 1);
+  // weight shifts over the planted foot
+  p.bx = X_STAND * u - 0.4 * c * settle;
+  const lift = 1.15 * Math.pow(Math.max(0, Math.abs(c)), 0.8) * settle;
+  p.hipL = -GAIT_A * s; p.hipR = GAIT_A * s;
+  p.kneeL = leftStance ? 0 : lift;
+  p.kneeR = leftStance ? lift : 0;
+  // swing leg leads with the thigh while the knee is bent
+  if (leftStance) p.hipR -= 0.25 * lift; else p.hipL -= 0.25 * lift;
+  p.tz = 0.05 * c * settle; p.ty = 0.12 * s; p.tx = 0.1;
+  p.sRx = -0.05 - 0.38 * s; p.sLx = -0.05 + 0.38 * s;
+  p.eR = -0.55 - 0.2 * Math.max(0, s); p.eL = -0.55 - 0.2 * Math.max(0, -s);
+  p.hx = 0.08 + 0.2 * u; p.hy = -0.1 * s;
   if (k !== lastStep && k >= 0) {
     lastStep = k;
-    const fx0 = p.bx + (k % 2 ? 2.0 : -2.0), fz0 = p.bz + 2.6;
+    const fx0 = p.bx + (leftStance ? 2.0 : -2.0), fz0 = p.bz + LEG * Math.sin(GAIT_A) + 0.6;
     shakeAmp = Math.max(shakeAmp, 0.08 + 0.75 * u * u);
     shockwave(fx0, fz0, 0.7 + u);
     emitSparks(fx0, 0.2, fz0 + 1, 34, 7);

@@ -9,7 +9,7 @@
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    background: #04050d;
+    background: #030409;
     color: #eef2ff;
     font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
     line-height: 1.7;
@@ -80,7 +80,7 @@
   .posts {
     position: relative;
     z-index: 1;
-    background: #04050d;
+    background: #030409;
     padding: 48px 20px 64px;
   }
   .posts-inner { max-width: 760px; margin: 0 auto; }
@@ -101,14 +101,14 @@
   footer {
     position: relative;
     z-index: 1;
-    background: #04050d;
+    background: #030409;
     text-align: center;
     color: #94a3b8;
     padding: 0 20px 36px;
     font-size: 0.9rem;
   }
   footer a { color: #94a3b8; }
-  #shatter {
+  #shatter, #shards {
     position: fixed;
     inset: 0;
     width: 100%;
@@ -174,6 +174,7 @@
 </head>
 <body>
 <canvas id="bg3d"></canvas>
+<canvas id="shards" aria-hidden="true"></canvas>
 <canvas id="shatter" aria-hidden="true"></canvas>
 <button id="intro-skip" type="button" hidden>SKIP ▸</button>
 

@@ -1,5 +1,5 @@
 // ホーム画面の 3D 演出:
-// 虚空から巨大なメカいちご熊が歩いてきて画面を殴り、
+// 虚空から巨大なカラフルなクマが歩いてきて画面を殴り、
 // 液晶ガラスが割れて崩れ落ち、ブログが現れる。
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -62,20 +62,20 @@ fitCamera();
   pm.dispose();
 })();
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.12));
-const key = new THREE.DirectionalLight(0xffeef6, 1.5);
+scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+const key = new THREE.DirectionalLight(0xffffff, 1.5);
 key.position.set(5, 10, 12);
 scene.add(key);
-const rimA = new THREE.DirectionalLight(0x22e6ff, 2.6);
+const rimA = new THREE.DirectionalLight(0x22e6ff, 0.5);
 rimA.position.set(-9, 6, -10);
 scene.add(rimA);
-const rimB = new THREE.DirectionalLight(0xff2d95, 2.6);
+const rimB = new THREE.DirectionalLight(0xff2d95, 0.5);
 rimB.position.set(9, 4, -10);
 scene.add(rimB);
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.42, 0.4, 0.92);
+const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.3, 0.4, 0.98);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
@@ -137,152 +137,145 @@ function group(parent, x, y, z) {
 }
 const HALF = Math.PI / 2;
 
-// ---------- chubby mecha strawberry bear (faces +z, ~19 units tall) ----------
+// ---------- pop-art patterned bear (faces +z, ~19 units tall) ----------
 const LEG = 3.5; // hip joint to ankle joint
 const HIP_Y = 4.5;
+function patternTexture() {
+  // white coat covered in overlapping coloured rings, tiled so it wraps around the body
+  const size = 1024;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.fillStyle = '#f8f5ee';
+  g.fillRect(0, 0, size, size);
+  g.fillStyle = 'rgba(40,40,60,0.16)';
+  for (let y = 0; y < size; y += 16) for (let x = (y / 16) % 2 ? 8 : 0; x < size; x += 16) { g.beginPath(); g.arc(x, y, 1.6, 0, 7); g.fill(); }
+  const colors = ['#e8372c', '#f6c21c', '#2b54d8', '#7b3fc4', '#ff7a1a', '#17a67a', '#ff5fa8'];
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const spots = [];
+  for (let tries = 0; tries < 4000 && spots.length < 46; tries++) {
+    const x = rnd() * size, y = rnd() * size, r = 34 + rnd() * 26;
+    if (spots.some((s) => Math.hypot(Math.min(Math.abs(s.x - x), size - Math.abs(s.x - x)), Math.min(Math.abs(s.y - y), size - Math.abs(s.y - y))) < s.r + r + 46)) continue;
+    spots.push({ x, y, r });
+  }
+  g.globalCompositeOperation = 'multiply';
+  for (const s of spots) {
+    const a = rnd() * Math.PI * 2, c1 = colors[Math.floor(rnd() * colors.length)];
+    let c2 = colors[Math.floor(rnd() * colors.length)];
+    if (c2 === c1) c2 = colors[(colors.indexOf(c1) + 3) % colors.length];
+    for (const ox of [-size, 0, size]) for (const oy of [-size, 0, size]) {
+      for (const [k, col] of [[-1, c1], [1, c2]]) {
+        g.strokeStyle = col;
+        g.lineWidth = s.r * 0.5;
+        g.beginPath();
+        g.arc(s.x + ox + Math.cos(a) * s.r * 0.55 * k, s.y + oy + Math.sin(a) * s.r * 0.55 * k, s.r * 0.72, 0, Math.PI * 2);
+        g.stroke();
+      }
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 4;
+  return t;
+}
+const toonRamp = new THREE.DataTexture(new Uint8Array([150, 150, 150, 255, 215, 215, 215, 255, 255, 255, 255, 255]), 3, 1);
+toonRamp.minFilter = toonRamp.magFilter = THREE.NearestFilter;
+toonRamp.needsUpdate = true;
+const furTex = patternTexture();
+const T = {
+  white: new THREE.MeshToonMaterial({ color: 0xfbf8f2, gradientMap: toonRamp }),
+  black: new THREE.MeshBasicMaterial({ color: 0x0d0d12 }),
+  shine: new THREE.MeshBasicMaterial({ color: 0xffffff }),
+  blush: new THREE.MeshBasicMaterial({ color: 0xff8fb0 }),
+  tongue: new THREE.MeshBasicMaterial({ color: 0xe8372c }),
+  line: new THREE.MeshBasicMaterial({ color: 0x0d0d12, side: THREE.BackSide }),
+};
+function fur(rx, ry) {
+  const m = new THREE.MeshToonMaterial({ map: furTex.clone(), gradientMap: toonRamp });
+  m.map.repeat.set(rx, ry);
+  m.map.needsUpdate = true;
+  return m;
+}
+/** Thick ink outline: the same shape again, slightly larger, drawn inside-out. */
+function ink(mesh, grow = 0.16) {
+  mesh.geometry.computeBoundingSphere();
+  const k = 1 + grow / mesh.geometry.boundingSphere.radius;
+  const o = new THREE.Mesh(mesh.geometry, T.line);
+  o.scale.setScalar(k);
+  mesh.add(o);
+  return mesh;
+}
 const ball = (r, mat, parent, x, y, z, sx, sy, sz) => {
-  const m = put(new THREE.Mesh(new THREE.SphereGeometry(r, 36, 24), mat), parent, x, y, z);
+  const m = put(new THREE.Mesh(new THREE.SphereGeometry(r, 40, 28), mat), parent, x, y, z);
   m.scale.set(sx || 1, sy || 1, sz || 1);
   return m;
 };
 const capsule = (r, len, mat, parent, x, y, z) =>
-  put(new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 8, 24), mat), parent, x, y, z);
-const ring = (r, tube, mat, parent, x, y, z, rx, ry, rz) =>
-  put(new THREE.Mesh(new THREE.TorusGeometry(r, tube, 8, 40), mat), parent, x, y, z, rx, ry, rz);
+  put(new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 10, 28), mat), parent, x, y, z);
 function buildBear() {
   const B = {};
+  const dummy = () => ({ scale: new THREE.Vector3(), visible: false, material: {} });
   B.root = new THREE.Group();
   B.hips = group(B.root, 0, HIP_Y, 0);
-  ball(2.5, M.dark, B.hips, 0, 0.4, 0, 1.3, 0.6, 1.0);
-  prism(0.6, 0.6, 5.2, 12, M.steel, B.hips, 0, -0.3, 0, 0, 0, HALF);
 
-  // short, stubby legs
+  // short stubby legs
   function leg(side) {
-    const hip = group(B.hips, side * 2.0, -0.3, 0);
-    ball(1.1, M.dark, hip, 0, 0, 0);
-    capsule(1.3, 0.5, M.pink, hip, 0, -1.0, 0);
-    ring(1.18, 0.09, M.dark, hip, 0, -1.75, 0, HALF);
+    const hip = group(B.hips, side * 1.55, -0.3, 0);
+    ink(capsule(1.25, 0.9, fur(1.4, 1), hip, 0, -0.9, 0));
     const knee = group(hip, 0, -2.0, 0);
-    prism(0.75, 0.75, 2.5, 14, M.steel, knee, 0, 0, 0, 0, 0, HALF);
-    ball(0.7, M.deep, knee, 0, 0.05, 1.05, 1, 1, 0.5);
-    capsule(1.35, 0.25, M.pink, knee, 0, -0.85, 0);
-    ring(1.3, 0.06, M.cyan, knee, 0, -1.3, 0, HALF);
-    ring(1.25, 0.14, M.dark, knee, 0, -1.5, 0, HALF);
-    for (const k of [-1, 1]) prism(0.1, 0.1, 1.5, 6, M.steel, knee, k * 0.8, -0.8, -1.25, 0.1);
+    ink(capsule(1.22, 0.5, fur(1.4, 1), knee, 0, -0.75, 0));
     const foot = group(knee, 0, -1.5, 0);
-    ball(1.55, M.pink, foot, 0, -0.22, 0.6, 1.05, 0.5, 1.5);
-    put(new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.55, 0.3, 24), M.dark), foot, 0, -0.55, 0.6).scale.z = 1.45;
-    ball(0.6, M.light, foot, 0, 0.25, 1.9, 1.3, 0.35, 1);
-    for (const k of [-0.75, 0, 0.75]) {
-      put(new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.8, 6), M.steel), foot, k, -0.45, 2.85, HALF);
-    }
+    ink(ball(1.45, fur(1.6, 1), foot, 0, 0.02, 0.45, 1.0, 0.5, 1.35));
+    ball(0.75, T.white, foot, 0, -0.4, 0.5, 1.2, 0.3, 1.5);
     return { hip, knee, foot };
   }
   B.legL = leg(1);
   B.legR = leg(-1);
 
-  // big round belly
+  // small round body
   B.torso = group(B.hips, 0, 0.3, 0);
-  ball(4.3, M.pink, B.torso, 0, 3.6, 0, 1.06, 1.0, 0.95);
-  ball(3.3, M.light, B.torso, 0, 3.1, 2.25, 1.0, 1.05, 0.6);
-  // armour seams + rivets
-  ring(4.33, 0.07, M.dark, B.torso, 0, 3.6, 0, HALF).scale.set(1.06, 0.95, 1);
-  ring(4.33, 0.06, M.dark, B.torso, 0, 3.6, 0, 0, HALF).scale.set(0.95, 1, 1);
-  for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2;
-    ball(0.13, M.steel, B.torso, Math.sin(a) * 4.58, 3.95, Math.cos(a) * 4.1);
-  }
-  for (let i = -1; i <= 1; i++) {
-    ring(3.2 - Math.abs(i) * 0.5, 0.045, M.deep, B.torso, 0, 3.1 + i * 1.3, 2.3 + (1 - Math.abs(i)) * 0.0, HALF).scale.set(1, 0.6, 1);
-  }
-  // belly reactor
-  ring(0.95, 0.2, M.steel, B.torso, 0, 3.3, 4.2);
-  B.core = put(new THREE.Mesh(new THREE.CircleGeometry(0.85, 24), M.cyan), B.torso, 0, 3.3, 4.22);
-  B.coreGlow = glow(0x1596b0, 3.2, B.torso, 0, 3.3, 4.5);
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2;
-    ball(0.1, M.steel, B.torso, Math.cos(a) * 1.35, 3.3 + Math.sin(a) * 1.35, 4.12);
-  }
-  // chest vents
-  for (const s of [-1, 1]) {
-    for (let i = 0; i < 3; i++) box(0.9, 0.09, 0.1, M.hot, B.torso, s * 2.5, 5.7 + i * 0.28, 3.0 - i * 0.2, -0.45, s * 0.6);
-    prism(0.42, 0.5, 3.6, 10, M.steel, B.torso, s * 2.1, 6.9, -3.0, -0.3);
-    prism(0.5, 0.5, 0.35, 10, M.dark, B.torso, s * 2.1, 8.6, -3.52, -0.3);
-    prism(0.3, 0.3, 0.06, 10, M.hot, B.torso, s * 2.1, 8.78, -3.58, -0.3);
-  }
-  box(3.4, 3.2, 1.4, M.dark, B.torso, 0, 4.2, -3.6);
-  ring(2.1, 0.5, M.dark, B.torso, 0, 7.5, 0.15, HALF);
-  ring(2.35, 0.06, M.cyan, B.torso, 0, 7.5, 0.15, HALF);
+  ink(ball(3.3, fur(3, 2), B.torso, 0, 2.5, 0, 1.0, 1.05, 0.9), 0.18);
+  ink(ball(0.7, fur(1, 1), B.torso, 0, 1.4, -3.0), 0.14); // tail
 
-  // big round head
-  B.head = group(B.torso, 0, 7.5, 0.3);
-  ball(3.0, M.pink, B.head, 0, 2.5, 0, 1.12, 0.95, 1.0);
-  ring(3.02, 0.05, M.dark, B.head, 0, 2.5, 0, 0, HALF).scale.set(1, 0.95, 1);
-  ball(1.5, M.light, B.head, 0, 1.65, 2.35, 1.3, 0.92, 0.8);
-  ball(0.56, M.nose, B.head, 0, 2.25, 3.42, 1.4, 0.95, 0.8);
-  box(0.09, 0.7, 0.09, M.dark, B.head, 0, 1.6, 3.5, 0.15);
-  put(new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.06, 6, 20, Math.PI), M.dark), B.head, 0, 1.6, 3.28, 0.3, 0, Math.PI);
-  B.eyeGlows = [];
+  // very big head
+  B.head = group(B.torso, 0, 5.1, 0.2);
+  B.head.scale.setScalar(1.12);
+  ink(ball(4.3, fur(3.5, 2.2), B.head, 0, 3.6, 0, 1.12, 0.95, 1.0), 0.2);
+  ball(3.4, T.white, B.head, 0, 3.15, 1.35, 1.08, 0.86, 0.9); // face mask
   for (const s of [-1, 1]) {
-    prism(0.56, 0.56, 0.5, 20, M.glass, B.head, s * 1.2, 3.1, 2.55, HALF - 0.2, 0, 0);
-    ring(0.58, 0.09, M.steel, B.head, s * 1.2, 3.15, 2.78, -0.2, s * 0.25);
-    ball(0.27, M.eye, B.head, s * 1.2, 3.13, 2.82);
-    B.eyeGlows.push(glow(0x1b8fa6, 1.3, B.head, s * 1.2, 3.13, 3.1));
-    // heavy angry brows
-    box(1.75, 0.46, 0.7, M.brow, B.head, s * 1.25, 3.78, 2.42, -0.3, s * 0.25, s * 0.42);
-    // round ears
-    prism(1.3, 1.3, 0.75, 28, M.pink, B.head, s * 2.85, 4.85, -0.1, HALF);
-    ring(1.3, 0.12, M.deep, B.head, s * 2.85, 4.85, 0.25);
-    put(new THREE.Mesh(new THREE.CircleGeometry(0.85, 24), M.light), B.head, s * 2.85, 4.85, 0.29);
-    ring(0.85, 0.05, M.hot, B.head, s * 2.85, 4.85, 0.3);
-    prism(0.35, 0.35, 0.4, 10, M.steel, B.head, s * 3.35, 2.1, 0.3, 0, 0, HALF);
-    ball(0.11, M.steel, B.head, s * 2.2, 4.0, 2.0);
-    ball(0.11, M.steel, B.head, s * 2.75, 3.1, 1.6);
+    ink(ball(1.55, fur(1.4, 1), B.head, s * 3.55, 7.05, -0.2, 1, 1, 0.55), 0.18);
+    ball(0.85, T.white, B.head, s * 3.5, 7.0, 0.5, 1, 1, 0.3);
+    // panda-style eye patches with big shines
+    const patch = ball(1.2, T.black, B.head, s * 1.75, 3.7, 4.02, 1.0, 1.18, 0.32);
+    patch.rotation.set(-0.08, s * 0.36, s * 0.3);
+    ball(0.36, T.shine, B.head, s * 1.48, 4.2, 4.42);
+    ball(0.17, T.shine, B.head, s * 2.05, 3.3, 4.26);
+    const blush = ball(0.62, T.blush, B.head, s * 3.25, 2.5, 3.28, 1.15, 0.75, 0.2);
+    blush.rotation.y = s * 0.75;
   }
-  prism(0.05, 0.05, 1.8, 6, M.steel, B.head, 1.3, 6.0, -0.6);
-  B.antenna = glow(0xaa1122, 0.7, B.head, 1.3, 6.95, -0.6);
+  ball(0.4, T.black, B.head, 0, 2.95, 4.48, 1.35, 0.9, 0.7);
+  put(new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.075, 8, 20, Math.PI), T.black), B.head, 0, 2.05, 4.36, -0.2);
+  ball(0.3, T.tongue, B.head, 0.62, 1.95, 4.2, 0.9, 1.2, 0.6);
 
-  // thick arms, huge round fists
+  // stubby arms with mitten paws
   function arm(side) {
-    const shoulder = group(B.torso, side * 5.0, 5.7, 0);
-    ball(1.75, M.deep, shoulder, 0, 0.1, 0);
-    ring(1.76, 0.07, M.cyan, shoulder, 0, 0.1, 0, 0, HALF);
-    capsule(1.25, 0.9, M.pink, shoulder, 0, -1.75, 0);
-    const elbow = group(shoulder, 0, -3.0, 0);
-    ball(1.1, M.dark, elbow, 0, 0, 0);
-    prism(0.7, 0.7, 2.5, 12, M.steel, elbow, 0, 0, 0, 0, 0, HALF);
-    prism(0.6, 0.4, 0.9, 10, M.steel, elbow, 0, 0.5, -1.15, 0.5);
-    const flame = put(new THREE.Mesh(new THREE.ConeGeometry(0.42, 3.4, 10, 1, true),
-      new THREE.MeshBasicMaterial({
-        color: new THREE.Color(0x66f0ff).multiplyScalar(1.6), transparent: true, opacity: 0.8,
-        blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide,
-      })), elbow, 0, 2.3, -2.15, 0.5);
-    const flare = glow(0x2aa6bd, 3, elbow, 0, 0.95, -1.4);
-    capsule(1.4, 0.8, M.pink, elbow, 0, -1.6, 0);
-    for (const k of [-1, 1]) prism(0.1, 0.1, 2.0, 6, M.steel, elbow, k * 0.8, -1.4, -1.3, -0.1);
-    ring(1.42, 0.06, M.cyan, elbow, 0, -1.2, 0, HALF);
-    ring(1.3, 0.2, M.dark, elbow, 0, -2.75, 0, HALF);
-    // clenched fist: knuckles lead (-y), back of the hand is +z, fingers curl under to the palm (-z)
-    const fist = group(elbow, 0, -3.7, 0);
-    ball(1.7, M.pink, fist, 0, 0.1, 0, 1.08, 0.8, 0.92);
-    ball(1.25, M.deep, fist, 0, 0.15, 0.75, 1.15, 0.8, 0.7);
-    ring(0.8, 0.05, M.cyan, fist, 0, 0.15, 1.6, 0.1);
-    for (let i = 0; i < 4; i++) {
-      const fxp = -1.05 + i * 0.7;
-      // first finger bone runs across the striking face, second folds back into the palm
-      put(new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 1.3, 6, 14), M.pink), fist, fxp, -1.2, 0.0, HALF);
-      put(new THREE.Mesh(new THREE.CapsuleGeometry(0.32, 0.6, 6, 14), M.pink), fist, fxp, -0.75, -0.95);
-      ball(0.4, M.steel, fist, fxp, -1.2, 0.8, 1, 1, 1.1);
-      if (i < 3) box(0.06, 0.5, 1.5, M.hot, fist, fxp + 0.35, -1.1, 0.0);
-    }
-    // thumb wraps across the curled fingers from the inner side
-    put(new THREE.Mesh(new THREE.CapsuleGeometry(0.36, 1.0, 6, 14), M.deep), fist, -side * 0.75, -0.55, -1.42, 0, 0, HALF + side * 0.25);
-    ball(0.5, M.deep, fist, -side * 1.55, -0.2, -1.0);
-    const tip = group(fist, 0, -1.6, 0.1);
-    return { shoulder, elbow, fist, tip, flame, flare };
+    const shoulder = group(B.torso, side * 3.2, 4.1, 0);
+    ink(capsule(1.05, 0.9, fur(1.3, 1), shoulder, 0, -1.0, 0));
+    const elbow = group(shoulder, 0, -2.1, 0);
+    ink(capsule(1.08, 0.8, fur(1.3, 1), elbow, 0, -1.0, 0));
+    const fist = group(elbow, 0, -2.5, 0);
+    ink(ball(1.4, fur(1.6, 1.2), fist, 0, 0, 0, 1.05, 0.95, 1.0), 0.17);
+    ball(0.7, T.white, fist, 0, -0.75, -0.55, 1.2, 0.5, 0.9); // paw pad on the palm side
+    const tip = group(fist, 0, -1.35, 0.1);
+    return { shoulder, elbow, fist, tip, flame: dummy(), flare: dummy() };
   }
   B.armL = arm(1);
   B.armR = arm(-1); // the bear's right arm: the punching one
+  B.eyeGlows = [dummy(), dummy()];
+  B.coreGlow = dummy();
+  B.antenna = dummy();
   return B;
 }
 const bear = buildBear();
